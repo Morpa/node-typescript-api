@@ -1,34 +1,37 @@
 import { StormGlass } from '@src/clients/stormGlass';
+import stormglassNormalizedResponseFixture from '@test/fixtures/stormglass_normalized_response_3_hours.json';
+import * as stormglassWeatherPointFixture from '@test/fixtures/stormglass_weather_3_hours.json';
 import * as HTTPUtil from '@src/util/request';
-
-import stormGlassWeather3HoursFixture from '@test/fixtures/stormglass_weather_3_hours.json';
-import stormGlassNormalized3HoursFixture from '@test/fixtures/stormglass_normalized_response_3_hours.json';
 
 jest.mock('@src/util/request');
 
-describe('stormGlass', () => {
+describe('StormGlass client', () => {
+  /**
+   * Used for static method's mocks
+   */
   const MockedRequestClass = HTTPUtil.Request as jest.Mocked<
     typeof HTTPUtil.Request
   >;
-
+  /**
+   * Used for instance method's mocks
+   */
   const mockedRequest = new HTTPUtil.Request() as jest.Mocked<HTTPUtil.Request>;
   it('should return the normalized forecast from the StormGlass service', async () => {
     const lat = -33.792726;
-    const lng = 151.289889;
+    const lng = 151.289824;
 
     mockedRequest.get.mockResolvedValue({
-      data: stormGlassWeather3HoursFixture,
+      data: stormglassWeatherPointFixture,
     } as HTTPUtil.Response);
 
     const stormGlass = new StormGlass(mockedRequest);
     const response = await stormGlass.fetchPoints(lat, lng);
-    expect(response).toEqual(stormGlassNormalized3HoursFixture);
+    expect(response).toEqual(stormglassNormalizedResponseFixture);
   });
 
   it('should exclude incomplete data points', async () => {
     const lat = -33.792726;
     const lng = 151.289824;
-
     const incompleteResponse = {
       hours: [
         {
@@ -66,13 +69,16 @@ describe('stormGlass', () => {
     const lat = -33.792726;
     const lng = 151.289824;
 
-    MockedRequestClass.isRequestError.mockReturnValue(true);
     mockedRequest.get.mockRejectedValue({
       response: {
         status: 429,
         data: { errors: ['Rate Limit reached'] },
       },
     });
+    /**
+     * Mock static function return
+     */
+    MockedRequestClass.isRequestError.mockReturnValue(true);
 
     const stormGlass = new StormGlass(mockedRequest);
 
